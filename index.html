@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Generator & System Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold">🛡️ Secure Profile Card & Admin Hub</h1>
+            <div class="space-x-2">
+                <button onclick="switchTab('user')" id="btn-user" class="px-4 py-2 rounded bg-indigo-700 font-semibold transition">ผู้ใช้งาน (User)</button>
+                <button onclick="switchTab('admin')" id="btn-admin" class="px-4 py-2 rounded bg-indigo-950 font-semibold transition">ผู้ดูแลระบบ (Admin)</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-6">
+        
+        <!-- ================= USER VIEW ================= -->
+        <div id="view-user" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Form Section -->
+            <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                <h2 class="text-lg font-bold border-b pb-2 text-indigo-900">📝 กรอกข้อมูลสร้างการ์ด</h2>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">URL รูปถ่ายบุคคล:</label>
+                    <input type="text" id="input-image" value="https://via.placeholder.com/300x400" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">ชื่อ-นามสกุล:</label>
+                        <input type="text" id="input-name" placeholder="นายอนุวัฒน์ บุระมาศ" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">อายุ (ปี):</label>
+                        <input type="number" id="input-age" value="37" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">ประวัติคดี (Crime Description):</label>
+                    <textarea id="input-crime" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="เสพยาเสพติดให้โทษประเภท 1..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">หมายจับ / คดีเลขที่:</label>
+                    <input type="text" id="input-criminum" placeholder="หมายศาล 92/2568" class="w-full border rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">ที่อยู่:</label>
+                    <input type="text" id="input-address" placeholder="9/2 ม.2 ต.ลำพญากลาง..." class="w-full border rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">เบอร์โทรศัพท์:</label>
+                        <input type="text" id="input-phone" placeholder="0960811932 ผูก ทร.14" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">บทบาท/หน่วยงาน:</label>
+                        <input type="text" id="input-role" placeholder="ประกันสุขภาพ รพ.สีคิ้ว" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">ลิงก์โซเชียล (Facebook/อื่นๆ):</label>
+                    <input type="text" id="input-social" placeholder="https://www.facebook.com/..." class="w-full border rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="saveToSheet()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition shadow">บันทึกลง Google Sheet</button>
+                    <button onclick="sendLineFlex()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg transition shadow">ส่ง LINE Flex OA</button>
+                </div>
+            </div>
+
+            <!-- Preview Card Section -->
+            <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center">
+                <h2 class="text-lg font-bold border-b pb-2 w-full text-indigo-900 mb-4">🔍 ตัวอย่างการ์ด (Live Preview)</h2>
+                
+                <div id="card-preview" class="w-full max-w-sm bg-white border-2 border-slate-200 rounded-2xl shadow-xl p-4 space-y-3">
+                    <div class="w-full h-64 bg-slate-200 rounded-lg overflow-hidden flex items-center justify-center">
+                        <img id="prev-img" src="https://via.placeholder.com/300x400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-center">
+                        <h3 id="prev-name" class="text-lg font-bold text-slate-900">นายอนุวัฒน์ บุระมาศ อายุ 37 ปี</h3>
+                    </div>
+                    <div class="text-xs space-y-2 text-slate-700">
+                        <div class="flex items-start gap-2">
+                            <span class="text-red-600 font-bold">🟥</span>
+                            <div><span class="font-semibold">Crime Description: ประวัติฯ</span><p id="prev-crime">-</p></div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-red-700 font-bold">📁</span>
+                            <div><span class="font-semibold">Crime Number:</span> <span id="prev-criminum">-</span></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>🏠</span> <span id="prev-address">-</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>📞</span> <span id="prev-phone">-</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>⭕</span> <span id="prev-role">-</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>🌐</span> <a id="prev-social" href="#" target="_blank" class="text-blue-600 underline truncate">ลิงก์โปรไฟล์</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN VIEW ================= -->
+        <div id="view-admin" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                <h2 class="text-xl font-bold text-indigo-900 border-b pb-2">⚙️ ตั้งค่าระบบหลังบ้าน (Admin Dashboard)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Google Apps Script Web App URL:</label>
+                        <input type="text" id="admin-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">LINE Channel Access Token:</label>
+                        <input type="password" id="admin-line-token" placeholder="ใส่ LINE Token ของคุณที่นี่..." class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="saveAdminConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg transition shadow">บันทึกการตั้งค่า</button>
+                </div>
+
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="font-bold text-md text-slate-800 mb-2">🛠️ เครื่องมือจัดการเนื้อหาหลังบ้าน</h3>
+                    <p class="text-sm text-slate-600 mb-3">แอดมินสามารถเพิ่มกรอบ, ปรับแต่งไอคอน หรือเพิ่มฟิลด์ข้อมูลพิเศษได้ที่นี่</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="alert('ฟีเจอร์เพิ่มไอคอนใหม่กำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">+ เพิ่มไอคอนใหม่</button>
+                        <button onclick="alert('ฟีเจอร์สร้างแผนที่ Map กำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">+ สร้าง Map Pin</button>
+                        <button onclick="alert('ฟีเจอร์ปรับแต่งธีมกรอบการ์ดกำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">🎨 จัดการกรอบ (Frames)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Real-time Preview Binding
+        const fields = ['image', 'name', 'age', 'crime', 'criminum', 'address', 'phone', 'role', 'social'];
+        fields.forEach(field => {
+            const el = document.getElementById(`input-${field}`);
+            if(el) {
+                el.addEventListener('input', updatePreview);
+            }
+        });
+
+        function updatePreview() {
+            document.getElementById('prev-img').src = document.getElementById('input-image').value || 'https://via.placeholder.com/300x400';
+            document.getElementById('prev-name').innerText = (document.getElementById('input-name').value || 'ชื่อ-นามสกุล') + ' อายุ ' + (document.getElementById('input-age').value || '0') + ' ปี';
+            document.getElementById('prev-crime').innerText = document.getElementById('input-crime').value || '-';
+            document.getElementById('prev-criminum').innerText = document.getElementById('input-criminum').value || '-';
+            document.getElementById('prev-address').innerText = document.getElementById('input-address').value || '-';
+            document.getElementById('prev-phone').innerText = document.getElementById('input-phone').value || '-';
+            document.getElementById('prev-role').innerText = document.getElementById('input-role').value || '-';
+            
+            const socialLink = document.getElementById('input-social').value;
+            const socialEl = document.getElementById('prev-social');
+            socialEl.href = socialLink || '#';
+            socialEl.innerText = socialLink || 'ไม่มีลิงก์';
+        }
+
+        function switchTab(role) {
+            const userView = document.getElementById('view-user');
+            const adminView = document.getElementById('view-admin');
+            const btnUser = document.getElementById('btn-user');
+            const btnAdmin = document.getElementById('btn-admin');
+
+            if(role === 'user') {
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                btnUser.className = "px-4 py-2 rounded bg-indigo-700 font-semibold transition";
+                btnAdmin.className = "px-4 py-2 rounded bg-indigo-950 font-semibold transition";
+            } else {
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                btnAdmin.className = "px-4 py-2 rounded bg-indigo-700 font-semibold transition";
+                btnUser.className = "px-4 py-2 rounded bg-indigo-950 font-semibold transition";
+            }
+        }
+
+        function getGasUrl() {
+            return localStorage.getItem('gas_url') || document.getElementById('admin-gas-url').value;
+        }
+
+        function saveAdminConfig() {
+            const gasUrl = document.getElementById('admin-gas-url').value;
+            const lineToken = document.getElementById('admin-line-token').value;
+            
+            if(!gasUrl) {
+                alert('กรุณากรอก Google Apps Script Web App URL');
+                return;
+            }
+
+            localStorage.setItem('gas_url', gasUrl);
+            localStorage.setItem('line_token', lineToken);
+            alert('บันทึกการตั้งค่าหลังบ้านเรียบร้อยแล้ว!');
+        }
+
+        // โหลดค่าเดิมตอนเปิดเว็บ
+        window.onload = function() {
+            if(localStorage.getItem('gas_url')) {
+                document.getElementById('admin-gas-url').value = localStorage.getItem('gas_url');
+            }
+            if(localStorage.getItem('line_token')) {
+                document.getElementById('admin-line-token').value = localStorage.getItem('line_token');
+            }
+            updatePreview();
+        }
+
+        function saveToSheet() {
+            const url = getGasUrl();
+            if(!url) {
+                alert('ยังไม่ได้ตั้งค่า GAS URL ในระบบ Admin กรุณาไปตั้งค่าก่อน');
+                switchTab('admin');
+                return;
+            }
+
+            const payload = {
+                action: "saveCard",
+                imageUrl: document.getElementById('input-image').value,
+                fullName: document.getElementById('input-name').value,
+                age: document.getElementById('input-age').value,
+                crimeDesc: document.getElementById('input-crime').value,
+                crimeNum: document.getElementById('input-criminum').value,
+                address: document.getElementById('input-address').value,
+                phone: document.getElementById('input-phone').value,
+                role: document.getElementById('input-role').value,
+                socialLink: document.getElementById('input-social').value
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                alert('ส่งข้อมูลบันทึกลง Google Sheet สำเร็จ!');
+            }).catch(err => {
+                alert('เกิดข้อผิดพลาด: ' + err);
+            });
+        }
+
+        function sendLineFlex() {
+            const url = getGasUrl();
+            const lineToken = localStorage.getItem('line_token');
+
+            if(!url || !lineToken) {
+                alert('กรุณาตั้งค่า GAS URL และ LINE Token ในหน้า Admin ก่อนใช้งานส่ง LINE');
+                switchTab('admin');
+                return;
+            }
+
+            const payload = {
+                action: "sendLineFlex",
+                lineToken: lineToken,
+                imageUrl: document.getElementById('input-image').value,
+                fullName: document.getElementById('input-name').value,
+                age: document.getElementById('input-age').value,
+                crimeDesc: document.getElementById('input-crime').value,
+                socialLink: document.getElementById('input-social').value,
+                address: document.getElementById('input-address').value
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                alert('ส่งคำสั่งยิง LINE Flex Message สำเร็จ!');
+            }).catch(err => {
+                alert('เกิดข้อผิดพลาด: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>
