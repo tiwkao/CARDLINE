@@ -31,10 +31,13 @@
             <!-- Form Section -->
             <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
                 <h2 class="text-lg font-bold border-b pb-2 text-indigo-900">📝 กรอกข้อมูลสร้างการ์ด</h2>
+                
+                <!-- อัปโหลดรูปภาพ -->
                 <div>
-                    <label class="block text-sm font-semibold mb-1">URL รูปถ่ายบุคคล:</label>
-                    <input type="text" id="input-image" value="https://via.placeholder.com/300x400" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                    <label class="block text-sm font-semibold mb-1">อัปโหลดรูปถ่ายบุคคล:</label>
+                    <input type="file" id="input-image-file" accept="image/*" onchange="previewFile()" class="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1">ชื่อ-นามสกุล:</label>
@@ -86,7 +89,7 @@
                         <img id="prev-img" src="https://via.placeholder.com/300x400" class="w-full h-full object-cover">
                     </div>
                     <div class="text-center">
-                        <h3 id="prev-name" class="text-lg font-bold text-slate-900">นายอนุวัฒน์ บุระมาศ อายุ 37 ปี</h3>
+                        <h3 id="prev-name" class="text-lg font-bold text-slate-900">ชื่อ-นามสกุล อายุ - ปี</h3>
                     </div>
                     <div class="text-xs space-y-2 text-slate-700">
                         <div class="flex items-start gap-2">
@@ -130,18 +133,14 @@
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <button onclick="saveAdminConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg transition shadow">บันทึกการตั้งค่า</button>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">LINE User ID ผู้รับ (ปลายทาง):</label>
+                    <input type="text" id="admin-line-userid" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    <p class="text-xs text-slate-500 mt-1">*ผู้รับต้องเคยเพิ่มเพื่อนหรือทักแชทบอท LINE OA ก่อน จึงจะส่งข้อความหาได้</p>
                 </div>
 
-                <div class="border-t pt-4 mt-4">
-                    <h3 class="font-bold text-md text-slate-800 mb-2">🛠️ เครื่องมือจัดการเนื้อหาหลังบ้าน</h3>
-                    <p class="text-sm text-slate-600 mb-3">แอดมินสามารถเพิ่มกรอบ, ปรับแต่งไอคอน หรือเพิ่มฟิลด์ข้อมูลพิเศษได้ที่นี่</p>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="alert('ฟีเจอร์เพิ่มไอคอนใหม่กำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">+ เพิ่มไอคอนใหม่</button>
-                        <button onclick="alert('ฟีเจอร์สร้างแผนที่ Map กำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">+ สร้าง Map Pin</button>
-                        <button onclick="alert('ฟีเจอร์ปรับแต่งธีมกรอบการ์ดกำลังพัฒนา')" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded text-sm font-medium">🎨 จัดการกรอบ (Frames)</button>
-                    </div>
+                <div class="pt-2">
+                    <button onclick="saveAdminConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg transition shadow">บันทึกการตั้งค่า</button>
                 </div>
             </div>
         </div>
@@ -149,8 +148,24 @@
     </main>
 
     <script>
-        // Real-time Preview Binding
-        const fields = ['image', 'name', 'age', 'crime', 'criminum', 'address', 'phone', 'role', 'social'];
+        let imageBase64Data = "";
+
+        // ฟังก์ชันอ่านไฟล์รูปและแปลงเป็น Base64 สำหรับแสดงพรีวิว
+        function previewFile() {
+            const fileInput = document.getElementById('input-image-file');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    imageBase64Data = reader.result;
+                    document.getElementById('prev-img').src = imageBase64Data;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Real-time Text Preview Binding
+        const fields = ['name', 'age', 'crime', 'criminum', 'address', 'phone', 'role', 'social'];
         fields.forEach(field => {
             const el = document.getElementById(`input-${field}`);
             if(el) {
@@ -159,7 +174,6 @@
         });
 
         function updatePreview() {
-            document.getElementById('prev-img').src = document.getElementById('input-image').value || 'https://via.placeholder.com/300x400';
             document.getElementById('prev-name').innerText = (document.getElementById('input-name').value || 'ชื่อ-นามสกุล') + ' อายุ ' + (document.getElementById('input-age').value || '0') + ' ปี';
             document.getElementById('prev-crime').innerText = document.getElementById('input-crime').value || '-';
             document.getElementById('prev-criminum').innerText = document.getElementById('input-criminum').value || '-';
@@ -199,6 +213,7 @@
         function saveAdminConfig() {
             const gasUrl = document.getElementById('admin-gas-url').value;
             const lineToken = document.getElementById('admin-line-token').value;
+            const lineUserId = document.getElementById('admin-line-userid').value;
             
             if(!gasUrl) {
                 alert('กรุณากรอก Google Apps Script Web App URL');
@@ -207,31 +222,30 @@
 
             localStorage.setItem('gas_url', gasUrl);
             localStorage.setItem('line_token', lineToken);
+            localStorage.setItem('line_userid', lineUserId);
             alert('บันทึกการตั้งค่าหลังบ้านเรียบร้อยแล้ว!');
         }
 
-        // โหลดค่าเดิมตอนเปิดเว็บ
         window.onload = function() {
-            if(localStorage.getItem('gas_url')) {
-                document.getElementById('admin-gas-url').value = localStorage.getItem('gas_url');
-            }
-            if(localStorage.getItem('line_token')) {
-                document.getElementById('admin-line-token').value = localStorage.getItem('line_token');
-            }
+            if(localStorage.getItem('gas_url')) document.getElementById('admin-gas-url').value = localStorage.getItem('gas_url');
+            if(localStorage.getItem('line_token')) document.getElementById('admin-line-token').value = localStorage.getItem('line_token');
+            if(localStorage.getItem('line_userid')) document.getElementById('admin-line-userid').value = localStorage.getItem('line_userid');
             updatePreview();
         }
 
         function saveToSheet() {
             const url = getGasUrl();
             if(!url) {
-                alert('ยังไม่ได้ตั้งค่า GAS URL ในระบบ Admin กรุณาไปตั้งค่าก่อน');
+                alert('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อน');
                 switchTab('admin');
                 return;
             }
 
+            alert('กำลังอัปโหลดรูปภาพและบันทึกข้อมูล กรุณารอสักครู่...');
+
             const payload = {
                 action: "saveCard",
-                imageUrl: document.getElementById('input-image').value,
+                imageBase64: imageBase64Data,
                 fullName: document.getElementById('input-name').value,
                 age: document.getElementById('input-age').value,
                 crimeDesc: document.getElementById('input-crime').value,
@@ -248,7 +262,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                alert('ส่งข้อมูลบันทึกลง Google Sheet สำเร็จ!');
+                alert('บันทึกข้อมูลและอัปโหลดรูปภาพลง Google Drive สำเร็จ!');
             }).catch(err => {
                 alert('เกิดข้อผิดพลาด: ' + err);
             });
@@ -257,17 +271,21 @@
         function sendLineFlex() {
             const url = getGasUrl();
             const lineToken = localStorage.getItem('line_token');
+            const lineUserId = localStorage.getItem('line_userid');
 
-            if(!url || !lineToken) {
-                alert('กรุณาตั้งค่า GAS URL และ LINE Token ในหน้า Admin ก่อนใช้งานส่ง LINE');
+            if(!url || !lineToken || !lineUserId) {
+                alert('กรุณาตั้งค่า GAS URL, LINE Token และ LINE User ID ในหน้า Admin ให้ครบถ้วน');
                 switchTab('admin');
                 return;
             }
 
+            alert('กำลังส่ง LINE Flex Message กรุณารอสักครู่...');
+
             const payload = {
                 action: "sendLineFlex",
                 lineToken: lineToken,
-                imageUrl: document.getElementById('input-image').value,
+                lineUserId: lineUserId,
+                imageBase64: imageBase64Data,
                 fullName: document.getElementById('input-name').value,
                 age: document.getElementById('input-age').value,
                 crimeDesc: document.getElementById('input-crime').value,
@@ -281,7 +299,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                alert('ส่งคำสั่งยิง LINE Flex Message สำเร็จ!');
+                alert('ส่ง LINE Flex Message สำเร็จ! ตรวจสอบในห้องแชทได้เลย');
             }).catch(err => {
                 alert('เกิดข้อผิดพลาด: ' + err);
             });
