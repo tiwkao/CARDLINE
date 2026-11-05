@@ -35,7 +35,8 @@
                 <!-- อัปโหลดรูปภาพ -->
                 <div>
                     <label class="block text-sm font-semibold mb-1">อัปโหลดรูปถ่ายบุคคล:</label>
-                    <input type="file" id="input-image-file" accept="image/*" onchange="previewFile()" class="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <input type="file" id="input-image-file" accept="image/*" onchange="uploadImageToDrive()" class="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <p id="upload-status" class="text-xs text-slate-500 mt-1">สถานะ: ยังไม่ได้เลือกรูปภาพ</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -136,7 +137,6 @@
                 <div>
                     <label class="block text-sm font-semibold mb-1">LINE User ID ผู้รับ (ปลายทาง):</label>
                     <input type="text" id="admin-line-userid" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" class="w-full border rounded-lg px-3 py-2 text-sm">
-                    <p class="text-xs text-slate-500 mt-1">*ผู้รับต้องเคยเพิ่มเพื่อนหรือทักแชทบอท LINE OA ก่อน จึงจะส่งข้อความหาได้</p>
                 </div>
 
                 <div class="pt-2">
@@ -148,29 +148,61 @@
     </main>
 
     <script>
-        let imageBase64Data = "";
+        let uploadedImageUrl = "";
 
-        // ฟังก์ชันอ่านไฟล์รูปและแปลงเป็น Base64 สำหรับแสดงพรีวิว
-        function previewFile() {
+        // อัปโหลดไฟล์รูปภาพเข้า Google Drive ทันทีที่เลือกไฟล์
+        function uploadImageToDrive() {
             const fileInput = document.getElementById('input-image-file');
+            const statusEl = document.getElementById('upload-status');
             const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    imageBase64Data = reader.result;
-                    document.getElementById('prev-img').src = imageBase64Data;
+            
+            if (!file) return;
+
+            statusEl.innerText = "สถานะ: กำลังอัปโหลดรูปภาพเข้า Google Drive...";
+            const reader = new FileReader();
+            
+            reader.onloadend = function() {
+                const base64Data = reader.result;
+                const url = getGasUrl();
+
+                if (!url) {
+                    alert('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อนอัปโหลดรูปภาพ');
+                    switchTab('admin');
+                    return;
                 }
-                reader.readAsDataURL(file);
+
+                fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "uploadImage",
+                        imageBase64: base64Data,
+                        fileName: file.name
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        uploadedImageUrl = data.imageUrl;
+                        document.getElementById('prev-img').src = uploadedImageUrl;
+                        statusEl.innerText = "สถานะ: อัปโหลดรูปภาพสำเร็จ ✅";
+                    } else {
+                        statusEl.innerText = "สถานะ: อัปโหลดไม่สำเร็จ ❌";
+                        alert('อัปโหลดรูปไม่สำเร็จ: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    statusEl.innerText = "สถานะ: เกิดข้อผิดพลาด ❌";
+                    console.error(err);
+                });
             }
+            reader.readAsDataURL(file);
         }
 
         // Real-time Text Preview Binding
         const fields = ['name', 'age', 'crime', 'criminum', 'address', 'phone', 'role', 'social'];
         fields.forEach(field => {
             const el = document.getElementById(`input-${field}`);
-            if(el) {
-                el.addEventListener('input', updatePreview);
-            }
+            if(el) el.addEventListener('input', updatePreview);
         });
 
         function updatePreview() {
@@ -235,17 +267,12 @@
 
         function saveToSheet() {
             const url = getGasUrl();
-            if(!url) {
-                alert('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อน');
-                switchTab('admin');
-                return;
-            }
-
-            alert('กำลังอัปโหลดรูปภาพและบันทึกข้อมูล กรุณารอสักครู่...');
+            if(!url) { alert('กรุณาตั้งค่า GAS URL ก่อน'); switchTab('admin'); return; }
+            if(!uploadedImageUrl) { alert('กรุณารออัปโหลดรูปภาพให้เสร็จก่อนกดบันทึก'); return; }
 
             const payload = {
                 action: "saveCard",
-                imageBase64: imageBase64Data,
+                imageUrl: uploadedImageUrl,
                 fullName: document.getElementById('input-name').value,
                 age: document.getElementById('input-age').value,
                 crimeDesc: document.getElementById('input-crime').value,
@@ -258,14 +285,11 @@
 
             fetch(url, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).then(() => {
-                alert('บันทึกข้อมูลและอัปโหลดรูปภาพลง Google Drive สำเร็จ!');
-            }).catch(err => {
-                alert('เกิดข้อผิดพลาด: ' + err);
-            });
+            })
+            .then(res => res.json())
+            .then(() => alert('บันทึกลง Google Sheet สำเร็จ!'))
+            .catch(err => alert('เกิดข้อผิดพลาด: ' + err));
         }
 
         function sendLineFlex() {
@@ -274,35 +298,34 @@
             const lineUserId = localStorage.getItem('line_userid');
 
             if(!url || !lineToken || !lineUserId) {
-                alert('กรุณาตั้งค่า GAS URL, LINE Token และ LINE User ID ในหน้า Admin ให้ครบถ้วน');
+                alert('กรุณาตั้งค่า GAS URL, LINE Token และ LINE User ID ให้ครบถ้วนในหน้า Admin');
                 switchTab('admin');
                 return;
             }
-
-            alert('กำลังส่ง LINE Flex Message กรุณารอสักครู่...');
+            if(!uploadedImageUrl) { alert('กรุณารออัปโหลดรูปภาพให้เสร็จก่อนส่ง LINE'); return; }
 
             const payload = {
                 action: "sendLineFlex",
                 lineToken: lineToken,
                 lineUserId: lineUserId,
-                imageBase64: imageBase64Data,
+                imageUrl: uploadedImageUrl,
                 fullName: document.getElementById('input-name').value,
                 age: document.getElementById('input-age').value,
                 crimeDesc: document.getElementById('input-crime').value,
-                socialLink: document.getElementById('input-social').value,
-                address: document.getElementById('input-address').value
+                crimeNum: document.getElementById('input-criminum').value,
+                address: document.getElementById('input-address').value,
+                phone: document.getElementById('input-phone').value,
+                role: document.getElementById('input-role').value,
+                socialLink: document.getElementById('input-social').value
             };
 
             fetch(url, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).then(() => {
-                alert('ส่ง LINE Flex Message สำเร็จ! ตรวจสอบในห้องแชทได้เลย');
-            }).catch(err => {
-                alert('เกิดข้อผิดพลาด: ' + err);
-            });
+            })
+            .then(res => res.json())
+            .then(() => alert('ส่ง LINE Flex Message สำเร็จ! ตรวจสอบในห้องแชทได้เลย'))
+            .catch(err => alert('เกิดข้อผิดพลาด: ' + err));
         }
     </script>
 </body>
